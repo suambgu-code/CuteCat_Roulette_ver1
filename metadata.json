@@ -1,0 +1,8 @@
+{
+  "name": "美食輪盤ver1",
+  "description": "A smart restaurant picker using Gemini API with Google Maps Grounding to help you decide what to eat nearby or in specific regions.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}
