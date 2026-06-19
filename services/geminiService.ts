@@ -97,10 +97,10 @@ function parseRestaurantsFromText(text: string, groundingChunks: any[]): Restaur
 function getPriceInstruction(level?: string): string {
     if (!level) return "";
     switch(level) {
-        case 'inexpensive': return "Strictly filter for inexpensive/affordable options (Price level $). Avoid expensive places.";
-        case 'moderate': return "Strictly filter for moderately priced options (Price level $$).";
-        case 'expensive': return "Strictly filter for expensive/high-end options (Price level $$$).";
-        case 'very_expensive': return "Strictly filter for luxury/very expensive options (Price level $$$$).";
+        case 'inexpensive': return "Strictly filter for cheap/affordable restaurants with average main dish or single item priced under 150 TWD (New Taiwan Dollars) (主餐/單品項150元以內). Avoid places with higher prices.";
+        case 'moderate': return "Strictly filter for moderately priced restaurants with average main dish or single item priced under 300 TWD (New Taiwan Dollars) (主餐/單品項300元以內). Avoid cheaper streetside food or expensive bistros.";
+        case 'expensive': return "Strictly filter for high-end restaurants with average main dish or single item priced under 1000 TWD (New Taiwan Dollars) (主餐/單品項1000元以內).";
+        case 'very_expensive': return "Strictly filter for luxury/very expensive restaurants with average main dish or single item priced over 1000 TWD (New Taiwan Dollars) (主餐/單品項1000元以上).";
         default: return "";
     }
 }

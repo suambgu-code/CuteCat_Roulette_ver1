@@ -100,6 +100,47 @@ const App: React.FC = () => {
     }
   }, [isSpinning]);
 
+  // Auto-refetch recommendations if the user changes the budget (priceLevel) or distance (searchRadius) while we have an active winner
+  useEffect(() => {
+    if (selectedWinner && (mode === 'GENERIC' || mode === 'CUSTOM' || mode === 'PRESET')) {
+      if (!navigator.geolocation) return;
+      
+      setIsAutoFetching(true);
+      setRecommendations([]);
+
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const results = await geminiService.getNearbyRestaurants(
+              latitude, 
+              longitude, 
+              searchRadius, 
+              selectedWinner.name, 
+              priceLevel
+            );
+            setRecommendations(results);
+          } catch (e) {
+            console.error("Auto refetch failed", e);
+          } finally {
+            setIsAutoFetching(false);
+          }
+        },
+        (err) => {
+          console.log("Auto refetch location error", err);
+          setIsAutoFetching(false);
+        },
+        options
+      );
+    }
+  }, [priceLevel, searchRadius]);
+
   const addToFavorites = (restaurant: Restaurant) => {
     if (!favorites.some(f => f.name === restaurant.name)) {
       setFavorites([...favorites, restaurant]);
@@ -212,6 +253,7 @@ const App: React.FC = () => {
     setIsListModified(false);
     setSelectedWinner(null);
     setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePresetSelect = (presetKey: string) => {
@@ -467,10 +509,10 @@ const App: React.FC = () => {
 
   const getPriceLabel = (level: string) => {
       switch(level) {
-          case 'inexpensive': return '$';
-          case 'moderate': return '$$';
-          case 'expensive': return '$$$';
-          case 'very_expensive': return '$$$$';
+          case 'inexpensive': return '$平價';
+          case 'moderate': return '$中價';
+          case 'expensive': return '$高價';
+          case 'very_expensive': return '$奢華';
           default: return '';
       }
   };
@@ -541,31 +583,27 @@ const App: React.FC = () => {
            </div>
         </div>
 
-        {/* 輪盤目前選項標籤列表 */}
-        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-3xl border border-pink-100 mb-4 shadow-sm shadow-pink-100/30">
-            <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                    <Utensils className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-                    輪盤目前選項 (點擊文字可直接編輯)
-                </span>
+        {/* 精選推薦清單 */}
+        <div className="bg-white/95 backdrop-blur-sm p-4 rounded-3xl border border-pink-100 mb-4 shadow-sm shadow-pink-100/25 relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-slate-600 font-bold shrink-0">
+                <Utensils className="w-4 h-4 text-pink-400" />
+                <span className="text-sm">精選推薦清單</span>
             </div>
-            <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
-                {wheelItems.map((item, idx) => (
-                    <button
-                        key={item.id}
-                        onClick={() => {
-                            if (!isSpinning) {
-                                handleEditItem(idx);
-                            }
-                        }}
-                        disabled={isSpinning}
-                        className="px-2.5 py-1.5 text-xs font-bold text-slate-600 bg-pink-50/50 hover:bg-pink-100/70 border border-pink-100/50 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 group/tag"
-                    >
-                        <span className="w-1.5 h-1.5 rounded-full bg-pink-300 group-hover/tag:bg-pink-400 transition-colors"></span>
-                        <span className="max-w-[100px] truncate">{item.name}</span>
-                        <Edit className="w-3 h-3 text-slate-300 group-hover/tag:text-pink-400 transition-colors" />
-                    </button>
-                ))}
+            <div className="flex-1 min-w-[150px]">
+                <select 
+                    value={Object.keys(PRESET_CATEGORIES).find(key => PRESET_CATEGORIES[key].label === selectedPresetLabel) || ''}
+                    onChange={(e) => handlePresetSelect(e.target.value)}
+                    className="w-full py-2 px-3.5 pr-8 rounded-xl border border-pink-100/75 bg-pink-50/50 text-slate-600 font-bold text-xs focus:ring-2 focus:ring-pink-200 outline-none hover:bg-pink-50 transition-colors cursor-pointer appearance-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23fca5a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`, backgroundPosition: 'calc(100% - 12px) center', backgroundRepeat: 'no-repeat', backgroundSize: '14px' }}
+                >
+                    <option value="">選個美食種類吧...</option>
+                    <option value="breakfast">🌅 晨光活力早餐 (蛋餅、燒餅油條...)</option>
+                    <option value="lunch">🍱 豐富飽足午餐 (牛肉麵、滷肉飯...)</option>
+                    <option value="dinner">🍕 饗宴飽胃晚餐 (麻辣鍋、熱炒...)</option>
+                    <option value="snack">🍩 幸福療癒甜點 (紅豆餅、鬆餅、刨冰...)</option>
+                    <option value="drink">🍹 暢快解渴飲料 (蜂蜜綠茶、甘蔗青茶...)</option>
+                    <option value="drink_shop">🥤 網紅人氣飲料店 (麻古、五十嵐、得正...)</option>
+                </select>
             </div>
         </div>
 
@@ -597,7 +635,7 @@ const App: React.FC = () => {
         )}
 
         {/* Filters: Distance and Price */}
-        <div className="flex justify-end items-center gap-2 mb-3 px-1">
+        <div className="flex justify-center items-center gap-2 mb-3 px-1">
             {/* Price Selector */}
             <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm shadow-pink-100 border border-pink-100 text-slate-600">
                 <Banknote className="w-3.5 h-3.5 text-pink-300" />
@@ -609,10 +647,10 @@ const App: React.FC = () => {
                     disabled={isSpinning || isLoading}
                 >
                     <option value="">不限</option>
-                    <option value="inexpensive">$ 平價</option>
-                    <option value="moderate">$$ 中價</option>
-                    <option value="expensive">$$$ 高價</option>
-                    <option value="very_expensive">$$$$ 奢華</option>
+                    <option value="inexpensive">$平價</option>
+                    <option value="moderate">$中價</option>
+                    <option value="expensive">$高價</option>
+                    <option value="very_expensive">$奢華</option>
                 </select>
             </div>
 
@@ -675,33 +713,7 @@ const App: React.FC = () => {
             </button>
         </div>
 
-        {/* 精選推薦清單 */}
-        <div className="bg-white p-5 rounded-3xl border border-white mb-6 shadow-sm shadow-pink-100 relative overflow-hidden">
-            <div className="absolute -top-4 -right-4 p-2 opacity-10 rotate-12">
-                <Utensils className="w-32 h-32 text-pink-400" />
-            </div>
-            <div className="flex items-center gap-2 mb-3 text-slate-600 font-bold relative z-10">
-                <Utensils className="w-5 h-5 text-pink-400" />
-                <span>精選推薦清單</span>
-            </div>
-            <p className="text-xs text-slate-400 mb-3 relative z-10">想吃正餐還是點心？選擇想要的種類，讓貓咪大師為您準備專屬的 8 款在地經典美食！</p>
-            <div className="relative z-10">
-                <select 
-                    value={Object.keys(PRESET_CATEGORIES).find(key => PRESET_CATEGORIES[key].label === selectedPresetLabel) || ''}
-                    onChange={(e) => handlePresetSelect(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-pink-100 bg-pink-50/50 text-slate-600 font-bold text-sm focus:ring-2 focus:ring-pink-200 outline-none hover:bg-pink-50 transition-colors cursor-pointer appearance-none"
-                    style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23fca5a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`, backgroundPosition: 'calc(100% - 12px) center', backgroundRepeat: 'no-repeat', backgroundSize: '16px' }}
-                >
-                    <option value="">選個美食種類吧...</option>
-                    <option value="breakfast">🌅 晨光活力早餐 (蛋餅、燒餅油條...)</option>
-                    <option value="lunch">🍱 豐富飽足午餐 (牛肉麵、滷肉飯...)</option>
-                    <option value="dinner">🍕 饗宴飽胃晚餐 (麻辣鍋、熱炒...)</option>
-                    <option value="snack">🍩 幸福療癒甜點 (紅豆餅、鬆餅、刨冰...)</option>
-                    <option value="drink">🍹 暢快解渴飲料 (蜂蜜綠茶、甘蔗青茶...)</option>
-                    <option value="drink_shop">🥤 網紅人氣飲料店 (麻古、五十嵐、得正...)</option>
-                </select>
-            </div>
-        </div>
+
 
         {/* Region Selector */}
         <div className="bg-white p-5 rounded-3xl border border-white mb-6 shadow-sm shadow-pink-100 relative overflow-hidden">
@@ -832,14 +844,14 @@ const App: React.FC = () => {
           <div className="mt-8 pt-6">
               <h3 className="font-bold text-lg text-slate-600 mb-4 flex items-center gap-2">
                   <Star className="w-5 h-5 text-yellow-300 fill-current" />
-                  口袋名單
+                  我的最愛
               </h3>
               
               {favorites.length === 0 ? (
                   <div className="text-center py-10 text-slate-300 bg-white rounded-3xl border border-slate-50 text-sm shadow-sm shadow-slate-100">
                       <Cat className="w-12 h-12 mx-auto mb-2 text-slate-200" />
                       還沒有收藏的餐廳<br/>
-                      <span className="text-xs mt-1 block">看到喜歡的記得按愛心收進口袋</span>
+                      <span className="text-xs mt-1 block">看到喜歡的記得按愛心收進我的最愛</span>
                   </div>
               ) : (
                   <div className="grid gap-3">
