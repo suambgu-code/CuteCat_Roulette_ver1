@@ -52,13 +52,13 @@ export const PRESET_CATEGORIES: Record<string, { label: string; items: Restauran
   dinner: {
     label: '晚餐',
     items: [
-      { id: 'din-1', name: '麻辣火鍋', source: 'generic', description: '暖胃麻辣鴨血豆腐，搭頂級雪花牛與現拉手工麵' },
+      { id: 'din-1', name: '火鍋', source: 'generic', description: '暖胃麻辣鴨血、原味昆布或香濃牛奶鍋，搭配鮮嫩肉片與豐富菜盤' },
       { id: 'din-2', name: '無骨雞腿鐵板燒', source: 'generic', description: '主廚現炒蜜汁香煎雞腿排，蒜香十足、配爆炒高麗菜' },
       { id: 'din-3', name: '濃郁豚骨拉麵', source: 'generic', description: '熬煮12小時的白濁豚骨高湯，特製溏心蛋與炙燒叉燒' },
       { id: 'din-4', name: '韓式部隊鍋', source: 'generic', description: '濃郁起司泡麵、午餐肉與小熱狗，微辣暖和聚餐首選' },
       { id: 'din-5', name: '握壽司刺身盛合', source: 'generic', description: '當季現撈鮮鮭、鮪魚刺身，搭配手工握壽司與烤鯖魚' },
-      { id: 'din-6', name: '塩燒雞肉串居酒屋', source: 'generic', description: '炭火慢烤香嫩雞肉蔥串、醬烤手羽先，小酌放鬆首選' },
-      { id: 'din-7', name: '家常熱炒海鮮', source: 'generic', description: '蔥爆牛肉、鳳梨蝦球、塔香蛤蜊大火快炒，最台的美味' },
+      { id: 'din-6', name: '串燒/居酒屋', source: 'generic', description: '炭火慢烤香嫩雞肉蔥串、醬烤手羽先，小酌放鬆首選' },
+      { id: 'din-7', name: '家常菜', source: 'generic', description: '經典炒飯、鮮美炒青菜、金黃紅燒豆腐，充滿溫馨香氣的美味' },
       { id: 'din-8', name: '奶油培根義大利麵', source: 'generic', description: '濃郁白醬現炒義大利麵，撒上滿滿帕瑪森起司與焦香培根' },
     ]
   },

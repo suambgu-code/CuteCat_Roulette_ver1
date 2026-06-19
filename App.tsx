@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Heart, Star, Trash2, Map, AlertCircle, Loader2, ExternalLink, List, Plus, Edit, X, Save, ArrowRight, Ruler, Banknote, Coffee, Cat, PawPrint, Utensils, Sparkles } from 'lucide-react';
+import { MapPin, Navigation, Heart, Star, Trash2, Map, AlertCircle, Loader2, ExternalLink, List, Plus, Edit, X, Save, ArrowRight, Ruler, Banknote, Coffee, Cat, PawPrint, Utensils, Sparkles, RotateCcw } from 'lucide-react';
 import SpinWheel from './components/SpinWheel';
 import Confetti from './components/Confetti';
 import { Restaurant, FetchMode, DEFAULT_CATEGORIES, TAIWAN_CITIES, CityData, CustomList, PRESET_CATEGORIES } from './types';
@@ -464,16 +464,6 @@ const App: React.FC = () => {
                       
                       // Update recommendations with results (or empty list if none)
                       setRecommendations(results);
-                      
-                      if (results.length > 0) {
-                          // Scroll to list after results are loaded
-                          setTimeout(() => {
-                              const listElement = document.getElementById('recommendation-list');
-                              if (listElement) {
-                                  listElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              }
-                          }, 100);
-                      }
                   } catch (e) {
                       console.error("Auto-fetch failed", e);
                   } finally {
@@ -564,23 +554,75 @@ const App: React.FC = () => {
 
         {/* Wheel Section */}
         <div className="mb-4 mt-2">
-           <SpinWheel 
-             items={wheelItems} 
-             onSpinEnd={handleSpinEnd} 
-             isSpinning={isSpinning} 
-             setIsSpinning={setIsSpinning}
-             onEditItem={handleEditItem}
-           />
-           <div className="text-center mt-6 text-slate-400 text-sm font-medium tracking-widest flex items-center justify-center gap-3">
-              <span className="h-[2px] w-6 bg-pink-200 rounded-full"></span>
-              {mode === 'GENERIC' && " 選擇分類 "}
-              {mode === 'PRESET' && ` ${selectedPresetLabel}推薦 `}
-              {mode === 'NEARBY' && ` 附近 ${getDistanceLabel(searchRadius)} ${getPriceLabel(priceLevel)}`}
-              {mode === 'REGION' && ` ${selectedCity}${selectedDistrict} ${getPriceLabel(priceLevel)}`}
-              {mode === 'FAVORITES' && " 我的最愛 "}
-              {mode === 'CUSTOM' && " 自訂清單 "}
-              <span className="h-[2px] w-6 bg-pink-200 rounded-full"></span>
-           </div>
+           {!selectedWinner ? (
+             <>
+               <SpinWheel 
+                 items={wheelItems} 
+                 onSpinEnd={handleSpinEnd} 
+                 isSpinning={isSpinning} 
+                 setIsSpinning={setIsSpinning}
+                 onEditItem={handleEditItem}
+               />
+               <div className="text-center mt-6 text-slate-400 text-sm font-medium tracking-widest flex items-center justify-center gap-3">
+                  <span className="h-[2px] w-6 bg-pink-200 rounded-full"></span>
+                  {mode === 'GENERIC' && " 選擇分類 "}
+                  {mode === 'PRESET' && ` ${selectedPresetLabel}推薦 `}
+                  {mode === 'NEARBY' && ` 附近 ${getDistanceLabel(searchRadius)} ${getPriceLabel(priceLevel)}`}
+                  {mode === 'REGION' && ` ${selectedCity}${selectedDistrict} ${getPriceLabel(priceLevel)}`}
+                  {mode === 'FAVORITES' && " 我的最愛 "}
+                  {mode === 'CUSTOM' && " 自訂清單 "}
+                  <span className="h-[2px] w-6 bg-pink-200 rounded-full"></span>
+               </div>
+             </>
+           ) : (
+             <div className="animate-fade-in-up scroll-mt-6" id="winner-card">
+                 <div className="bg-white rounded-[2rem] shadow-xl shadow-rose-100 border-4 border-white overflow-hidden transform transition-all duration-500 relative">
+                     {/* Decorative Header */}
+                     <div className="bg-rose-50 p-4 text-center font-bold text-lg border-b border-rose-100 pt-6">
+                         <span className="text-rose-400 mr-2">✦</span> 
+                         <span className="text-slate-700">今日特選</span>
+                         <span className="text-rose-400 ml-2">✦</span>
+                     </div>
+                     
+                     <div className="p-6 bg-white flex flex-col items-center text-center">
+                         <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-sm">
+                             <Utensils className="w-10 h-10 text-orange-300" />
+                         </div>
+                         <h2 className="text-2xl font-bold text-slate-700 mb-2">{selectedWinner.name}</h2>
+                         {selectedWinner.description && (
+                             <p className="text-slate-400 mb-6 text-sm leading-relaxed max-w-xs">{selectedWinner.description}</p>
+                         )}
+                         
+                         <div className="flex gap-2 w-full mb-4">
+                             <a 
+                                 href={getMapLink(selectedWinner)}
+                                 target="_blank" 
+                                 rel="noopener noreferrer"
+                                 className="flex-1 bg-sky-300 text-white py-3.5 px-4 rounded-2xl text-center font-bold text-sm hover:bg-sky-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-sky-100"
+                             >
+                                 <MapPin className="w-4 h-4" /> 
+                                 {(mode === 'CUSTOM' || mode === 'PRESET') ? '搜尋地圖' : '導航'}
+                             </a>
+                             <button 
+                                 onClick={() => addToFavorites(selectedWinner)}
+                                 className="bg-rose-50 text-rose-400 p-3.5 rounded-2xl hover:bg-rose-100 transition-colors border border-rose-100 shadow-lg shadow-rose-50 flex items-center justify-center"
+                             >
+                                 <Heart className={`w-6 h-6 ${favorites.some(f => f.name === selectedWinner.name) ? 'fill-current' : ''}`} />
+                             </button>
+                         </div>
+
+                         {/* 返回重轉一次的按鈕 */}
+                         <button 
+                             onClick={() => setSelectedWinner(null)}
+                             className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200"
+                         >
+                             <RotateCcw className="w-4 h-4" />
+                             返回重轉一次
+                         </button>
+                     </div>
+                 </div>
+             </div>
+           )}
         </div>
 
         {/* 精選推薦清單 */}
@@ -754,47 +796,7 @@ const App: React.FC = () => {
             </button>
         </div>
 
-        {/* Winner Result Modal/Card */}
-        {selectedWinner && (
-            <div className="animate-fade-in-up scroll-mt-6 mb-6" id="winner-card">
-                <div className="bg-white rounded-[2rem] shadow-xl shadow-rose-100 border-4 border-white overflow-hidden transform transition-all duration-500 relative">
-                    {/* Decorative Header */}
-                    <div className="bg-rose-50 p-4 text-center font-bold text-lg border-b border-rose-100 pt-6">
-                        <span className="text-rose-400 mr-2">✦</span> 
-                        <span className="text-slate-700">今日特選</span>
-                        <span className="text-rose-400 ml-2">✦</span>
-                    </div>
-                    
-                    <div className="p-6 bg-white flex flex-col items-center text-center">
-                        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-sm">
-                            <Utensils className="w-10 h-10 text-orange-300" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-700 mb-2">{selectedWinner.name}</h2>
-                        {selectedWinner.description && (
-                            <p className="text-slate-400 mb-6 text-sm leading-relaxed max-w-xs">{selectedWinner.description}</p>
-                        )}
-                        
-                        <div className="flex gap-2 w-full">
-                            <a 
-                                href={getMapLink(selectedWinner)}
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex-1 bg-sky-300 text-white py-3.5 px-4 rounded-2xl text-center font-bold text-sm hover:bg-sky-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-sky-100"
-                            >
-                                <MapPin className="w-4 h-4" /> 
-                                {(mode === 'CUSTOM' || mode === 'PRESET') ? '搜尋地圖' : '導航'}
-                            </a>
-                            <button 
-                                onClick={() => addToFavorites(selectedWinner)}
-                                className="bg-rose-50 text-rose-400 p-3.5 rounded-2xl hover:bg-rose-100 transition-colors border border-rose-100 shadow-lg shadow-rose-50"
-                            >
-                                <Heart className={`w-6 h-6 ${favorites.some(f => f.name === selectedWinner.name) ? 'fill-current' : ''}`} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
+
 
         {/* Recommendation List - DIRECTLY BELOW WINNER CARD */}
         {(recommendations.length > 0 || isAutoFetching) && (
